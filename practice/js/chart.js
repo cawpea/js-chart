@@ -10,6 +10,7 @@ var CHART = {
 	LABEL_MARGIN: 10,
 	TICK_MARGIN: 10,
 	TICK_LENGTH: 10,
+	DOTTED_LINE_PATTERN: [5, 5],
 	init: function (data) {
 		this.data = data;
 		this.setParameters();
@@ -111,6 +112,8 @@ var CHART = {
 			this.context.moveTo( this.PADDING.LEFT, y );
 			this.context.lineTo( this.PADDING.LEFT - this.TICK_LENGTH, y );
 			this.context.stroke();
+
+			this.drawDottedLine( this.PADDING.LEFT, y, this.width - this.PADDING.RIGHT, y );
 		}
 
 		this.context.restore();
@@ -155,6 +158,33 @@ var CHART = {
 
 		this.ticksY = Math.ceil( this.maxY / base );
 		this.maxY = this.ticksY * base;
+	},
+	drawDottedLine: function ( x1, y1, x2, y2 ) {
+		var length = Math.sqrt( Math.pow( x2 - x1, 2 ) + Math.pow( y2 - y1, 2 )),
+			rateX = (x2 - x1) / length,
+			rateY = (y2 - y1) / length,
+			startX = x1,
+			startY = y1;
+
+		while( true ) {
+			for ( var i = 0, patternLength = this.DOTTED_LINE_PATTERN.length; i < patternLength; i += 2 ) {
+				var endX = startX + this.DOTTED_LINE_PATTERN[i] * rateX,
+					endY = startY + this.DOTTED_LINE_PATTERN[i] * rateY;
+
+				if( endX > x2 ) {
+					return;
+				}
+				this.context.beginPath();
+				this.context.moveTo( startX, startY );
+				this.context.lineTo( endX, endY );
+				this.context.stroke();
+
+				if ( i < patternLength - 1 ) {
+					startX = endX + this.DOTTED_LINE_PATTERN[i + 1] * rateX;
+					startY = endY + this.DOTTED_LINE_PATTERN[i + 1] * rateY;
+				}
+			}
+		}
 	},
 	formatNumber: function ( data ) {
 		data = String( data ).split('');
