@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+	<title>canvasでチャートを作ろう</title>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<style>
+	h1{
+		text-align: center;
+	}
+	.nav{
+		margin: 30px;
+	}
+	.command-container{
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		text-align: center;
+	}
+	.command-container > li{
+		display: inline-block;
+	}
+	.command-container > li > a{
+		display: inline-block;
+		text-decoration: none;
+		text-align: center;
+		color: #000000;
+		background-color: #FFFFFF;
+		border: solid 1px #404040;
+		border-radius: 5px;
+		font-size: 15px;
+		line-height: 20px; 
+		padding: 10px;
+		height: 20px;
+	}
+	.command-container > li > a.current{
+		color: #FFFFFF;
+		background-color: #808080;
+		cursor: default;
+	}
+	.title-container{
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.title-container > li{
+		display: none;
+		font-size: 18px;
+		text-align: center;
+		margin: 0;
+		padding: 20px 10px;
+	}
+	.content-container{
+		width: 100%;
+		min-width: 800px;
+		height: 400px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.content-container:after{
+		content: "."; 
+		display: block;
+		height: 0; 
+		font-size:0;
+		clear: both;
+		visibility:hidden;
+	}
+	.content-container > li{
+		box-sizing: border-box;
+		float: left;
+		margin: 0;
+		padding: 0px 5px;
+		width: 50%;
+		height: 100%;
+	}
+	.no-data{
+		display: table;
+		border: solid 1px #808080;
+		margin: auto;
+		width: 100%;
+		height: 100%;
+	}
+	.no-data > span{
+		display: table-cell;
+		font-size: 50px;
+		text-align: center;
+		vertical-align: middle;
+	}
+	.chart-container{
+		display: none;
+		border: solid 1px #808080;
+		margin: auto;
+		width: 100%;
+		height: 100%;
+	}
+	.comment-container{
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.comment-container > li{
+		display: none;
+		font-size: 16px;
+		text-align: left;
+		margin: 0;
+		padding: 20px 10px;
+	}
+	.source-container{
+		display: none;
+	}
+	</style>
+</head>
+<body>
+	<h1>canvasでチャートを作ろう</h1>
+	<header>
+		<nav>
+			<ol class="command-container" id="jsi-command-container">
+				<li><a href="0" class="current">はじめに</a></li>
+				<li><a href="1">1</a></li>
+				<li><a href="2">2</a></li>
+				<li><a href="3">3</a></li>
+				<li><a href="4">4</a></li>
+				<li><a href="5">5</a></li>
+				<li><a href="6">6</a></li>
+				<li><a href="7">7</a></li>
+				<li><a href="8">8</a></li>
+				<li><a href="9">9</a></li>
+				<li><a href="10">10</a></li>
+				<li><a href="11">11</a></li>
+				<li><a href="12">完成</a></li>
+				<li><a href="13">課題</a></li>
+			</ol>
+			<ol class="title-container" id="jsi-title-container">
+				<li>目的は下記の棒グラフを作成すること(元ネタは<a href="http://www5f.biglobe.ne.jp/~taskforce/carrier-share.html" target="_blank">このページ</a>)</li>
+				<li>JSONを作成する</li>
+				<li>canvas要素を生成する</li>
+				<li>座標軸を描画する</li>
+				<li>座標軸の目盛りを描画する</li>
+				<li>座標軸のラベルを描画する</li>
+				<li>補助線を描画する</li>
+				<li>棒を描画する</li>
+				<li>レジェンドを描画する</li>
+				<li>リサイズに対応させる</li>
+				<li>棒をアニメーションさせる</li>
+				<li>チャートが表示領域に入るまでアニメーションを遅延させる</li>
+				<li>レジェンドを選択可能にする</li>
+				<li>折れ線グラフを作成する</li>
+			</ol>
+		</nav>
+	</header>
+	<ul id="jsi-content-container" class="content-container">
+		<li>
+			<div class="chart-container" id="jsi-chart-container"></div>
+			<div class="no-data" id="jsi-no-chart-container"><span>No Image</span></div>
+		</li>
+		<li>
+			<iframe class="source-container" width="100%" height="100%" src="" id="jsi-source-container"></iframe>
+			<div class="no-data" id="jsi-no-source-container"><span>No Source</span></div>
+		</li>
+	</ul>
+	<ul class="comment-container" id="jsi-comment-container">
+		<li>
+			<section>
+				<h2>研修の進め方</h2>
+				<p>本研修ではcanvasで棒グラフを描画するための手順を、ページを分けて段階的に解説している。</p>
+				<p>まずは棒グラフの描画手順に一通り目を通して、チャートを作成する際の考え方を理解して欲しい。</p>
+				<p>この考え方は、canvasだけではなく、SVGやraphael.jsのようなライブラリを使用してチャートを描画する際にも役立つものになっている。</p>
+				<p>尚、本ページは特殊な作りをしているため、HTMLやjavascriptの依存関係が分かりにくくなってしまっている。</p>
+				<p>棒グラフの完成版は「sample/bar-chart」フォルダに置いてあるので、ソースコードを確認する場合はこちらを参照のこと。</p>
+				<p>新しい知識を身ににつけるためには、自分の頭で考え、手を動かすことが必要となる。</p>
+				<p>そこで研修の最後に、折れ線グラフを描画する課題を用意した。</p>
+				<p>棒グラフの描画手順をきちんと理解できれば、折れ線グラフも描画することができるはずなので、是非とも挑戦して欲しい。</p>
+			</section>
+			<section>
+				<h2>棒グラフの仕様</h2>
+				<h3>外部仕様</h3>
+				<ul>
+					<li>複数キャリアの契約純増数の推移を表示する</li>
+					<li>表示対象のキャリアはdocomo、au、softbankの3社</li>
+					<li>表示推移は2010年から2014年まで</li>
+				</ul>
+				<h3>機能仕様</h3>
+				<ul>
+					<li>チャートを構成する全ての要素をcanvasで描画する</li>
+					<li>棒グラフをアニメーションさせる</li>
+					<li>ウィンドウのリサイズに対応させる(適切な幅で再描画する)</li>
+					<li>ウィンドウのスクロールに対応させる(ウィンドウの表示領域にチャートが入ってからアニメーションを開始する)</li>
+					<li>レジェンドをクリックすることにより、対応するキャリアの表示/非表示を切り替える</li>
+				</ul>
+			<section>
+		</li>
+		<li>
+			<section>
+				<h2>チャートの目的は情報を視覚化すること</h2>
+				<p>今回のチャートを表示するために必要な情報は次の通り。</p>
+				<ul>
+					<li>各キャリアの名前</li>
+					<li>各キャリアに対応する棒グラフの色</li>
+					<li>各キャリアの年ごとの契約純増数の値</li>
+				</ul>
+			</section>
+			<section>
+				<h2>JSONを設計する</h2>
+				<p>Webページにチャートを表示する場合、元になるデータが固定のこともあるし、条件によって変化することもある。</p>
+				<p>いずれの場合でも、データはjavascriptで処理しやすいようにJSONで管理することが多い。</p>
+				<p>JSONを設計する際の必須条件は、チャートを描画するために必要なデータを全て格納しておくことのみである。</p>
+				<p>但し適切なデータ形式で格納しないと、保守性が低下したり、プログラムで処理し辛いものになってしまう。</p>
+				<p>JSONを設計する際のポイントには次のようなものが挙げられる。</p>
+				<ul>
+					<li>配列と連想配列を適切に使い分ける</li>
+					<li>関連性のあるデータを、適切に関係づける(親子関係、兄弟関係)</li>
+					<li>データがなるべく重複しないようにする</li>
+				</ul>
+				<p>以上の点を踏まえて設計した例が上記のコードである。</p>
+			<section>
+			<section>
+				<h2>JSONの読み込み方</h2>
+				<p>javascriptでJSONを参照するためには、JSONそのものをブラウザに読み込ませる必要がある。</p>
+				<p>そのための方法は大きく2種類に分けることができる。</p>
+				<ul>
+					<li>通常のjavascriptと同様に、HTMLにscriptタグを張り付けて読み込ませる</li>
+					<li>Ajax等を使用して非同期に読み込ませる</li>
+				</ul>
+				<p>チャートの表示内容を、ユーザの選択した条件等によって動的に変更する場合、随時JSONデータを読み込み直す必要がある。</p>
+				<p>このような場合は後者の方法を採るしかない。</p>
+				<p>これに対してチャートの表示内容が固定の場合は、JSONの読み込みは一度だけで済む。</p>
+				<p>このような場合は後者の方法を採ることもできるが、非同期に読み込む意味がないので、前者の方法を採ることが多い。</p>
+				<p>今回は前者の方法で読み込んでいる。</p>
+			</section>
+		</li>
+		<li>
+			<section>
+				<h2>canvas要素を動的に生成する</h2>
+				<p>canvas要素はHTML上に静的に記述することもできるが、今回は動的に生成している(左上のブロックをinspectすることで確認できる)。</p>
+				<p>尚canvas要素の幅と高さは、width属性とheight属性に対してpx単位で指定する必要がある。</p>
+				<p>%単位で指定することや、CSSで指定することはできない。</p>
+				<p>親要素のサイズに応じてcanvasのサイズを動的に決めたい場合は、javascriptで親要素のサイズを取得し、それを元に適切な値を設定する。</p>
+			</section>
+			<section>
+				<h2>contextオブジェクトを取得する</h2>
+				<p>canvas要素のDOMオブジェクトは、contextオブジェクトと呼ばれるオブジェクトを持っている。</p>
+				<p>canvas上に何かの情報を描画する場合は、このcontextオブジェクトを介して描画命令を発行することになる。</p>
+			</section>
+		</li>
+		<li>
+			<section>
+			<h2>contextオブジェクトの機能</h2>
+				<p>canvasのcontextオブジェクトに定義されているプロパティやメソッドは、<a href="http://www.html5.jp/canvas/ref.html" target="_blank">HTML5.JP</a>にまとめられているので、一読しておくこと。</p>
+			<section>
+			<section>
+				<h2>図形を描画するための手順</h2>
+				<p>図形を描画する場合、contextオブジェクトに対して次のような手順で命令を発行する。</p>
+				<ol>
+					<li>色や幅など、装飾に関わる値を指定する</li>
+					<li>新たな要素を描画することを宣言する</li>
+					<li>描画の始点を指定する(不要な場合もある)</li>
+					<li>どのような図形を描画するか指定する(図形の種類によって必要なパラメータが変わる)</li>
+					<li>描画を実行する</li>
+				</ol>
+				<p>例えば座標(0, 0)から座標(100, 100)にかけて黒い直線を描画する場合、各処理を次のように記述する。</p>
+				<ol>
+					<li>context.strokeStyle = '#000000'</li>
+					<li>context.beginPath()</li>
+					<li>context.moveTo(0, 0)</li>
+					<li>context.lineTo(100, 100)</li>
+					<li>context.stroke()</li>
+				</ol>
+			</section>
+			<section>
+				<h2>チャートを描画する際の注意点</h2>
+				<p>チャートを描画する場合、その構成要素(x軸、y軸、グラフ、レジェンド等)の位置を全て座標で指定する必要がある。</p>
+				<p>これは例えて言えば、HTMLを記述する際に、全てのタグをabsoluteで配置するようなもの。</p>
+				<p>この座標を固定値で指定してしまうと、描画領域のサイズが変更された場合に、全ての計算をやり直すことになる。</p>
+				<p>描画領域のサイズを変更することはよくあるので、固定値で指定した場合は地獄を見ることになる。</p>
+				<p>よって、全ての座標は描画領域のサイズを元に相対的に計算すべきである。</p>
+			</section>
+			<section>
+				<h2>x軸とy軸の位置の計算方法</h2>
+				<p>棒グラフを描画する場合、真っ先に位置を決めるべきはx軸とy軸である。</p>
+				<p>この2つの軸の位置が決まれば、他の構成要素の位置は自ずと決まってくる。</p>
+				<p>チャートを描画する場合、表示領域の上下左右に何らかの情報を埋め込むことが多い。</p>
+				<p>例えばx軸やy軸のラベル、レジェンド等である。</p>
+				<p>よって描画領域の上下左右には、ある程度の余裕を持たせる必要がある。</p>
+				<p>この領域のサイズは最初は厳密に決めることはできないため、描画前に適当な値を設定しておき、最後に調整する。</p>
+				<p>コードにはPADDINGという名前のオブジェクトを定義し、上下左右の領域の幅を設定している。</p>
+				<p>x軸はこのPADDINGを除いた領域の底辺一杯に、y軸は左辺一杯に描画する。</p>
+				<p>座標はHTMLと同じように左上が(0, 0)になるため、各座標軸の始点と終点は次の計算式で求めることができる。</p>
+				<ul>
+					<li>x軸の始点 : (PADDING.LEFT, canvasの高さ - PADDING.BOTTOM)</li>
+					<li>x軸の終点 : (canvasの幅 - PADDING.RIGHT, canvasの高さ - PADDING.BOTTOM)</li>
+					<li>y軸の始点 : (PADDING.LEFT, canvasの高さ - PADDING.BOTTOM)</li>
+					<li>y軸の終点 : (PADDING.LEFT, PADDING.TOP)</li>
+				</ul>
+			</section>
+		</li>
+		<li>
+			<section>
+				<h2>y軸の最大値を求める</h2>
+				<p>チャートを描画する場合、データのx座標の値は単調増加するため、「最後のデータのx座標 == x座標の最大値」となる。</p>
+				<p>しかしy座標の値はデータの値そのものであるため、「最後のデータのy座標 == y座標の最大値」は一般的には成り立たない。</p>
+				<p>y座標の最大値を求めるためには、全データを調べて最大値を取得する必要がある。</p>
+			</section>
+			<section>
+				<h2>y軸の最大値を適切に丸める</h2>
+				<p>例えばデータの最大値が1000のようにきりの良い数値の場合は、この値をy軸の最大値に設定しても特に問題はない。</p>
+				<p>しかし457のような端数の場合、その値をそのままy軸の最大値に設定すると表示上の違和感が強くなる。</p>
+				<p>また等間隔に整数値の目盛りを配置するのも難しくなる。</p>
+				<p>この場合、y軸の最大値を500に設定した方が、見た目も目盛りの配置も容易になる。</p>
+				<p>では457という端数から、500というきりの良い数値をどのように導けばよいのだろうか？</p>
+				<p>考え方は色々あるが、最も単純な方法は、二桁目以降の値を切り上げることである。</p>
+				<p>457ならば57を切り上げて500に、2450ならば450を切り上げて3000にする。</p>
+				<p>このアルゴリズムは次のようになる。</p>
+				<ol>
+					<li>対象数値の桁数を求める...(A)</li>
+					<li>上記で求めた桁数 - 1の10の乗数を求める...(B)</li>
+					<li>対象数値を(B)の数値で割る...(C)</li>
+					<li>(C)を切り上げる</li>
+					<li>(C)と(B)を掛ける</li>
+				</ol>
+				<p>具体的に457という数値から500という数値を導くための処理は次のようになる。</p>
+				<p>尚、457はnumberという変数に代入されているものとする。</p>
+				<ol>
+					<li>var digit = String(number).length; // 3</li>
+					<li>var base = Math.pow(10, digit - 1); // 100</li>
+					<li>number /= base; // 4.57</li>
+					<li>var ticks = Math.ceil(number); // 5</li>
+					<li>number = ticks * base; // 500</li>
+				</ol>
+				<p>尚、y軸の目盛りの数をticks個(上記の場合は5個)に設定すると、各目盛りがきりの良い値になる。</p>
+			</section>
+			<section>
+				<h2>目盛りを描画する</h2>
+				<h3>x軸の目盛りを描画する</h3>
+				<p>今回の仕様では、チャートの表示領域を年ごとに分割するためにx軸の目盛を描画している。</p>
+				<p>x軸の分割数は、描画する年数と等しくなる。</p>
+				<p>各年のデータはJSONのsubscribershipプロパティ(配列)に格納されているため、subscribership.lengthが年数となる。</p>
+				<p>x軸をsubscribership.length個に分割するためには、(subscribership.length - 1)個の目盛りを描画すれば良い。</p>
+				<p>一番左の目盛りの始点と終点の座標は次のようになる。</p>
+				<ul>
+					<li>始点のx座標 : PADDING.LEFT + x軸の長さ / subscribership.length</li>
+					<li>始点のy座標 : height - PADDING.BOTTOM</li>
+					<li>終点のx座標 : PADDING.LEFT + x軸の長さ / subscribership.length</li>
+					<li>終点のy座標 : height - PADDING.BOTTOM + 目盛りの長さ</li>
+				</ul>
+				<p>残りの目盛りはx座標を「x軸の長さ / subscribership.length」ずつずらしながら描画する。</p>
+				<h3>y軸の目盛りを描画する</h3>
+				<p>y軸の分割数は前述のticks個。</p>
+				<p>一番下の目盛りの始点と終点の座標は次のようになる。</p>
+				<ul>
+					<li>始点のx座標 : PADDING.LEFT</li>
+					<li>始点のy座標 : height - PADDING.BOTTOM - y軸の長さ / ticks</li>
+					<li>終点のx座標 : PADDING.LEFT - 目盛りの長さ</li>
+					<li>終点のy座標 : height - PADDING.BOTTOM - y軸の長さ / ticks</li>
+				</ul>
+				<p>但し上記の計算だと、一番上の目盛りの位置が、y軸の上端と一致してしまう。</p>
+				<p>機能的には問題ないが、デザイン的に微妙であるため、通常は一番上の目盛りの位置を、y軸の上端より少し下に描画することが多い。</p>
+				<p>この余白の幅をTICK_MARGINとして上記の座標の値を修正したものを次に示す。
+				<ul>
+					<li>始点のx座標 : PADDING.LEFT</li>
+					<li>始点のy座標 : height - PADDING.BOTTOM - (y軸の長さ - TICK_MARGIN) / ticks</li>
+					<li>終点のx座標 : PADDING.LEFT - 目盛りの長さ</li>
+					<li>終点のy座標 : height - PADDING.BOTTOM - (y軸の長さ - TICK_MARGIN) / ticks</li>
+				</ul>
+				<p>残りの目盛りはy座標を「-(y軸の長さ - TICK_MARGIN) / ticks」ずつずらしながら描画する。</p>
+			</section>
+		</li>
+		<li>
+			<section>
+				<h2>文字列を描画する</h2>
+				<p>canvasで文字列を描画するためにはstrokeText、またはfillTextメソッドを使用する。</p>
+				<ul>
+					<li>fillTextは普通の形式で文字を描画する</li>
+					<li>strokeTextは文字の縁取りだけを描画する</li>
+				</ul>
+				<p>いずれのメソッドも引数として「描画する文字列」「x座標」「y座標」を指定する。</p>
+				<p>文字列のサイズやフォントはfontプロパティで設定する。</p>
+				<p>今回はデフォルトのフォントとして'italic bold 12px Verdana'を設定している。</p>
+				<p>テキストの位置を指定する座標の解釈は、textAlignプロパティとtextBaselineプロパティの設定によって異なる。</p>
+				<p>例えば、テキストの中央の位置を指定したい場合はtextAlignにcenterを、textBaselineにmiddleを指定する。</p>
+				<p>またテキストの左上の位置を指定したい場合はtextAlignにleftを、textBaselineにtopを指定する。</p>
+				<p>詳しくは<a href="http://www.html5.jp/canvas/ref/method/fillText.html" target="_blank">textメソッドのリファレンス</a>を参照のこと</p>
+			</section>
+			<section>
+				<h2>数値を3桁ずつ「,」で区切って表示する</h2>
+				<p>大きな数値を表示する場合、桁数を視覚的に分かり易くするために3桁ずつ「,」で区切ることが多い。</p>
+				<p>この処理のアルゴリズムの例を次に示す。</p>
+				<ol>
+					<li>数値を文字列に変換する...(A)</li>
+					<li>(A)の文字列を一文字ずつ分割して配列に格納する...(B)</li>
+					<li>(B)の配列を後ろから辿って、3の倍数番目ごとに「,」を挿入する</li>
+					<li>(B)の配列の要素を結合する</li>
+				</ol>
+				<p>具体的な処理はコードのformatNumberメソッドを参照のこと。</p>
+			</section>
+			<li>
+				<section>
+					<h2>水平に点線を描画する</h2>
+					<p>補助線は一般的に座標軸よりも色を薄くしたり、点線で描画することが多い。</p>
+					<p>canvasには点線を描画するためのメソッドが存在しないので、自前で作成することにする。</p>
+					<p>点線を描画するための考え方は非常にシンプルである。</p>
+					<p>短い線分を、空白を挟みながら始点から終点まで繰り返し描画すれば良い。</p>
+					<p>水平に点線を描画するロジックの例を次に示す。</p>
+					<p>尚、始点の座標を(x1, y)、終点の座標を(x2, y)、線分の長さをlineLength, 空白の幅をspaceLengthで表すものとする。</p>
+					<pre>
+	for(var x = x1; x < x2; x += (lineLength + spaceLength)){
+		this.context.beginPath();
+		this.context.moveTo(x, y);
+		this.context.lineTo(x + lineLength, y);
+		this.context.stroke();
+	}
+					</pre>
+				</section>
+				<sction>
+					<h2>汎用的な点線描画用のメソッドを作成する</h2>
+					<p>水平または垂直な点線は、上記の通り非常に簡単に描画することができる。</p>
+					<p>今回は水平な補助線だけを描画すれば良いのでそれで十分だが、敢えて汎用的な点線を描画するロジックを考えてみることにする。</p>
+					<p>汎用的な点線とは次のような条件を満たすものを指す。</p>
+					<ul>
+						<li>始点と終点を指定することで、任意の方向(水平、垂直、斜め)に描画することができる</li>
+						<li>点線のパターン(※)を指定することができる</li>
+					</ul>
+					<p>(※)「- - - -」「― ― ―」「― - ― -」のような線分と空白の繰り返しパターン。</p>
+					<p>SVGでは点線のパターンを指定する場合、stroke-dasharray属性に"10 3 5 3"のように値を設定する。</p>
+					<p>これは「直線10px、空白3px、直線5px、空白3px」を1つのパターンとして、これを繰り返しながら点線を描画するという設定である。</p>
+					<p>今回は、このSVGの仕様を模倣することにする。</p>
+					<p>具体的な処理はコードのdrawDottedLineメソッドを参照のこと。</p>
+				</section>
+			</li>
+			<li>
+			<section>
+				<h2>四角形を描画する</h2>
+				<p>canvasで四角形を描画するためにはrectメソッドを使用する。</p>
+				<p>引数として「左上のx座標」「左上のy座標」「幅」「高さ」を指定する</p>
+				<p>直線と同様、四角形の色を指定する場合も、描画する前にstrokeStyleまたはfillStyleに対して設定しておく必要がある。</p>
+				<p>四角形の縁取りの色を設定する場合はstrokeStyle、塗り潰す色を設定する場合はfillStyleに対して設定する。</p>
+				<p>rectメソッド実行後にstrokeメソッドを実行すれば縁取りのみを描画し、fillメソッドを実行すれば塗り潰す。</p>
+				<p>両方指定することも可能。</p>
+			</section>
+			<section>
+				<h2>棒の表示位置を計算する</h2>
+				<section>
+					<h3>x座標の位置を計算する</h3>
+					<p>x座標を計算する前に、次の2つの値を計算しておく必要がある。</p>
+					<ul>
+						<li>1年あたりの表示領域の幅(tickSpaceX) = x軸の幅 / 全年数</li>
+						<li>棒1つあたりの幅(barWidth) = tisckSpaceX / キャリア数</li>
+					</ul>
+					<p>N番目のキャリアのM年目のx座標は次の式によって求めることができる。</p>
+					<p>M * tickSpaceX + N * barWidth</p>
+					<p>但し上記の通り表示した場合、各棒がぴったり隣接して表示されるため、チャートが見づらくなる。</p>
+					<p>よって実際には棒と棒の間に適切な余白を挟んで描画すべきである。</p>
+					<p>具体的な処理はコードのdrawBarsメソッドを参照のこと。</p>
+				</section>
+				<section>
+					<h3>y座標の位置を計算する</h3>
+					<p>y座標は各データの値によって決定する。</p>
+					<p>計算式は次の通り。</p>
+					<p>棒の高さ = y軸の高さ * データの値 / y軸の最大値</p>
+					<p>棒のy座標 = y軸の上端の座標 + y軸の高さ - 棒の高さ</p>
+				</section>
+			</section>
+		</li>
+		<li>
+			<section>
+				<h2>レジェンドを画面の中央に表示する</h2>
+				<p>レジェンドを中央に表示する場合は、次の式でレジェンドの左端のx座標を求める必要がある。</p>
+				<p>(表示領域の幅 - レジェンド全体の幅) / 2
+				<p>レジェンドは次の2つの要素で構成されている。</p>
+				<ul>
+					<li>棒グラフと同じ色の四角形のマーク...(A)</li>
+					<li>キャリア名を表す文字列...(B)</li>
+				</ul>
+				<p>1キャリア分のレジェンドの幅は「(A)の幅 + (B)の幅 + (A)と(B)の隙間の幅」で求められる。</p>
+				<p>レジェンド全体の幅は「全キャリアのレジェンドの幅の合計値 + 各レジェンド間の隙間の幅 * (キャリア数 - 1)」で求められる。</p>
+				<p>ここで問題になるのは(B)の幅である。</p>
+				<p>(B)の幅は文字、フォント、文字数などによって変わるため、自力で幅を求めることができない。</p>
+				<p>この値を取得するためにはmeasureTextメソッドを使用する必要がある。</p>
+				<p>このメソッドの引数に、幅を測定したい文字列を渡すと、その文字列の幅の情報を含んだオブジェクトを返してくれる。</p>
+				<p>具体的な処理はコードのdrawLegendメソッドを参照のこと。</p>
+			</section>
+		</li>
+		<li>
+			<section>
+				<h2>画面がリサイズされた時の処理</h2>
+				<p>画面がリサイズされた時は、canvasのサイズに応じて要素のサイズや位置を適切に変更する必要がある。</p>
+				<p>しかしcanvasに描画された要素はオブジェクトとして管理されていない単なるビットマップデータであるため、描画後にサイズや位置を変更することはできない。</p>
+				<p>よってリサイズされた時は描画した内容を全てクリアし、位置やサイズを変更して再描画する必要がある。</p>
+				<p>そのためには一部の処理を除いて、チャートの描画処理を最初から実行し直すことになる。</p>
+				<p>再描画時に実行しない処理は次の2つ。</p>
+				<ul>
+					<li>DOM情報の取得</li>
+					<li>イベントハンドラの設定</li>
+				</ul>
+			</section>
+			<section>
+				<h2>再描画のタイミング</h2>
+				<p>チャートの再描画は、windowオブジェクトのリサイズイベントが発生した時に実行する。</p>
+				<p>リサイズイベントはwindowのサイズを変更している間、連続して発生する。</p>
+				<p>ユーザの操作の仕方によっては、1秒間に数10回のイベントが発生することもある。</p>
+				<p>再描画の処理は総じて重いため、リサイズが発生するたびに実行すると、画面が固まってしまうこともある。</p>
+				<p>これを回避するため、リサイズ中ではなく、リサイズが終了した時に1回だけ再描画するようにする。</p>
+				<p>しかしリサイズが終了した時に特別なイベントが発生するわけではない。</p>
+				<p>そこでリサイズが発生した時にcanvasのサイズに影響を与える要素の幅を測定し、前回測定した値と同じだった時にリサイズが終了したものと判定する。</p>
+				<p>大まかな考え方は次の通り。</p>
+				<ol>
+					<li>リサイズが発生した時に、幅を測定するためのタイマーを設定する</li>
+					<li>タイマーが起動した時に幅を測定する</li>
+					<li>前回測定した値と同じ(一定時間幅が変わらない)場合はリサイズが終了したものと判定し、再描画を実行する</li>
+					<li>前回測定した値と異なる場合はリサイズが続行中であると判定し、タイマーを再設定する</li>
+				</ol>
+				<p>具体的な処理はコードのwatchResizeメソッドとredrawChartメソッドを参照のこと。</p>
+			</section>
+			<section>
+				<h2>タイマー設定用の関数</h2>
+				<p>javascriptはタイマーの設定/解除を行うための関数を3種類用意している。</p>
+				<ul>
+					<li>setTimeout / clearTimeout</li>
+					<li>setInterval / clearInterval</li>
+					<li>requestAnimationFrame / cancelAnimationFrame</li>
+				</ul>
+				<p>但し3つ目の関数は、IE9以下はサポートしていない。</p>
+				<p>requestAnimationFrameは機能的にはsetTimeoutとほぼ同じだが、タイマーの起動間隔を、開発者ではなくブラウザが決めるという点が異なる。</p>
+				<p>そのためrequestAnimationFrameは、設定時に時間を指定することができない。</p>
+				<p>タイマーを設定しているページの負荷等をブラウザが考慮し、最適だと判断されたタイミングで実行される。</p>
+				<p>大体の目安としては、60fps(1秒間に60回)前後で実行される。</p>
+				<p>今回はrequestAnimationFrameを使用してタイマーを設定している。</p>
+			</section>
+		</li>
+		<li>
+			<section>
+				<h2>canvasでアニメーションさせる方法</h2>
+				<p>リサイズに対応させる時に説明したように、canvasに描画した要素のサイズや位置を後から変更することはできない。</p>
+				<p>勿論、各要素をアニメーションさせるためのメソッドも存在しない。</p>
+				<p>よってcanvasの要素をアニメーションさせるためには、リサイズ時と同様、再描画する必要がある。</p>
+				<p>その際、可能な限り再描画範囲を狭くした方が性能は良くなる。</p>
+				<p>リサイズ時はcanvasに描画した全ての要素のサイズや位置を再計算する必要があるため、全体を再描画する必要があった。</p>
+				<p>しかし棒のアニメーションは、棒の位置と高さが変わるだけなので、棒の再描画のみで済ませることができる。</p>
+			</section>
+		</li>
+		<li>
+			<section>
+				<h2>スクロールイベントを監視する</h2>
+				<p>チャートが表示領域に入る前にアニメーションを開始させてしまうと、ユーザが気が付く前にアニメーションが終了してしまう。</p>
+				<p>よってチャートが表示領域に入るまで、アニメーションを遅延させる必要がある。</p>
+				<p>そのためにはスクロールイベントを監視し、最適な位置でアニメーションを開始させる。</p>
+				<p>今回は次のいずれかの条件を満たした時に開始させるようにした。</p>
+				<ul>
+					<li>チャートの高さ <= ウィンドウの高さ : チャートが表示領域に完全に含まれた時</li>
+					<li>チャートの高さ > ウィンドウの高さ : 表示領域がチャートと完全に重なった時</li>
+				</ul>
+			</section>
+		</li>
+		<li>
+			<section>
+				<h2>特定の要素がクリックされたことを判定する</h2>
+				<p>canvasに描画した要素はDOMオブジェクトではないため、実体を持たない。</p>
+				<p>よって特定の要素に対してイベントハンドラを設定することはできない。</p>
+				<p>このような場合、イベントハンドラをcanvas全体に対して設定する。</p>
+				<p>イベントが発生した場合は、クリックされた位置と、各要素の描画位置を比較して重なっているかどうか判定する。</p>
+				<p>両者が重なっている場合は、ユーザがその要素をクリックしたものと見做すことができる。</p>
+				<p>次の条件を満たした時に、両者が重なっていると判定する。</p>
+				<ul>
+					<li>クリックしたx座標 >= 描画要素の左上のx座標 && クリックしたx座標 <= 描画要素の右下のx座標</li>
+					<li>クリックしたy座標 >= 描画要素の左上のy座標 && クリックしたy座標 <= 描画要素の右下のy座標</li>
+				</ul>
+			</section>
+			<section>
+				<h2>レジェンドがクリックされた時の処理</h2>
+				<p>今回のチャートでは、レジェンドはキャリアの情報を表示している。</p>
+				<p>レジェンドをクリックする度に、対応するキャリアの状態を未選択・選択・未選択・・・と交互に変更する。</p>
+				<p>未選択状態のキャリアは次のように表示を変更する。</p>
+				<ul>
+					<li>対応するレジェンドの透明度を0.5に設定する</li>
+					<li>対応する棒を表示しない</li>
+					<li>y軸の最大値の計算ロジックから省く</li>
+				</ul>
+				<p>上記の変更を行うためには、次の要素を全て再描画する必要がある。</p>
+				<ul>
+					<li>レジェンドのマークと文字</li>
+					<li>y軸の目盛と、そのラベルの文字列</li>
+					<li>補助線</li>
+					<li>棒</li>
+				</ul>
+				<p>これだけの要素を全て再描画するくらいならば、チャート全体を再描画した方がロジックが簡単になる。</p>
+				<p>以上のことを考慮すると、レジェンドがクリックされた時の処理の流れは次のようになる。</p>
+				<ol>
+					<li>クリックされたレジェンドに対応するキャリアの選択状態を反転させる</li>
+					<li>キャリアの選択状態を保存する...(A)</li>
+					<li>(A)の情報を元にして、適切にチャートを再描画する</li>
+				</ol>
+			</section>
+		</li>
+		<li>
+			<section>
+				<h2>課題の仕様</h2>
+				<p>上記の折れ線グラフを作成する。元ネタは棒グラフと同様<a href="http://www5f.biglobe.ne.jp/~taskforce/carrier-share.html" target="_blank">このページ</a>。</p>
+				<p>チャートを表示するためのJSON形式は、本来は棒グラフと同じ形式でも問題ない。</p>
+				<p>しかし今回の課題では敢えて全く異なる形式のJSONを用意したので、これを用いること。</p>
+				<h3>外部仕様</h3>
+				<ul>
+					<li>複数キャリアの契約数の推移を表示する</li>
+					<li>表示対象のキャリアはdocomo、au、softbankの3社</li>
+					<li>表示推移は2010年から2014年まで</li>
+				</ul>
+				<h3>機能仕様</h3>
+				<ul>
+					<li>チャートを構成する全ての要素をcanvasで描画する</li>
+					<li>ウィンドウのリサイズに対応させる(適切な幅で再描画する)</li>
+					<li>レジェンドはチャートの右側に配置する</li>
+					<li>レジェンドをクリックすることにより、対応するキャリアの表示/非表示を切り替える</li>
+					<li>折れ線のアニメーションは不要(腕に覚えのある人は是非チャレンジして欲しいが)</li>
+					<li>y軸の最大値と最小値はきりの良い数値にする。但しデータの最大値と最小値になるべく近い値を設定すること。</li>
+				</ul>
+			</section>
+			<section>
+				<h2>折れ線グラフ描画するために必要な知識</h2>
+				<p>棒グラフを描画するための知識を理解することができていれば、折れ線グラフも描画できるはず。</p>
+				<p>折れ線はlineToメソッドを使用して描画する。</p>
+				<p>但しlinetToメソッドは直線しか描画することができないため、折れ線を描画するためには、lineToメソッドを複数回実行して、直線を繋ぎ合わせる必要がある。</p>
+				<p>折れ線上のドットはarcメソッドを使用して描画する</p>
+				<p>arcメソッドは円弧を描画するためのメソッドなので、真円を描画するためには0度から360度まで円弧を描画する</p>
+				<p>arcメソッドの仕様は<a href="http://www.html5.jp/canvas/ref/method/arc.html" target="_blank">こちら</a>を参照のこと</p>
+				<p>arcメソッドには次の6つの引数を指定する。</p>
+				<ul>
+					<li>x : 中心のx座標</li>
+					<li>y : 中心のy座標</li>
+					<li>radius : 半径</li>
+					<li>startAngle : 円弧の開始角度</li>
+					<li>endAngle : 円弧の終了角度</li>
+					<li>anticlockwise : 円弧の描画方向(true : 反時計回り、false : 時計回り)</li>
+				</ul>
+				<p>真円の場合、描画方向はどちらでも同じ。</p>
+				<p>また開始角度は0度、終了角度は360度で問題ない。</p>
+				<p>但し、arcメソッドに対して角度を指定する場合は「度」ではなく、ラジアンで指定する必要がある。</p>
+				<p>「360度 == 2π」であるため、開始角度が0、終了角度は2πとなる。</p>
+				<p>javascriptではπの値はMath.PIで参照することが可能。</p>
+			</section>
+			<section>
+				<h2>課題用のファイル</h2>
+				<p>「sample/line-chart」フォルダの下に必要なファイルを置いてあるので、これを使用する。</p>
+				<p>HTMLにはチャートの描画に必要なモジュールを既に読み込んである。</p>
+				<ul>
+					<li>jQuery</li>
+					<li>JSONデータ(carrier.json)</li>
+					<li>チャート描画用のjavascript(chart.js)</li>
+				</ul>
+				<p>但しchart.jsは何も記述していない。このファイルに適切なコードを記述して、仕様通りの折れ線グラフを描画すること。</p>
+			</section>
+		</li>
+	</ul>
+</body>
+<script type="text/javascript" src="data/bar-carrier.json"></script>
+<script type="text/javascript" src="data/line-carrier.json"></script>
+<script type="text/javascript" src="js/loader.js"></script>
+</html>
