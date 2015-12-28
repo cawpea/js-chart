@@ -13,6 +13,10 @@ var CHART = {
 	DOTTED_LINE_PATTERN: [5, 5],
 	BAR_CREVICE_RATE: 0.05,
 	BAR_END_RATE: 0.1,
+	LEGEND_SIZE: 12,
+	LEGEND_OFFSET: 10,
+	LEGEND_PADDING: 10,
+	LEGEND_MARGIN: 10,
 	init: function (data) {
 		this.data = data;
 		this.setParameters();
@@ -35,6 +39,7 @@ var CHART = {
 		this.setupCommonParameters();
 		this.setVerticalAxisInfo();
 		this.drawAxis();
+		this.drawLegend();
 		this.drawBars();
 	},
 	setupCommonParameters: function () {
@@ -224,6 +229,43 @@ var CHART = {
 						this.PADDING.TOP + this.TICK_MARGIN + axisYHeight - height,
 						eachBarWidth, height, eachBarWidth );
 			}
+		}
+		this.context.restore();
+	},
+	drawLegend: function () {
+		this.context.save();
+
+		var legendCount = this.data.carrier.length,
+			totalLength = 0,
+			literalLength = [];
+
+		//レジェンドの文字列の幅を取得して保持
+		for ( var i = 0, count = this.data.carrier.length; i < count; i++ ) {
+			var width = this.context.measureText( this.data.carrier[i].name ).width;
+			literalLength.push(width);
+			totalLength += width;
+		}
+
+		//レジェンドの合計幅を求める
+		totalLength += this.LEGEND_SIZE * legendCount;
+		totalLength += this.LEGEND_PADDING * legendCount;
+		totalLength += this.LEGEND_MARGIN * legendCount;
+
+		//レジェンドの左端のx座標
+		var x = (this.width - totalLength) / 2;
+
+		//レジェンドを描画
+		for( var i = 0, count = this.data.carrier.length; i < count; i++ ) {
+			this.context.fillStyle = this.data.carrier[i].color;
+			this.context.fillRect( x, this.LEGEND_OFFSET, this.LEGEND_SIZE, this.LEGEND_SIZE );
+
+			x += this.LEGEND_SIZE + this.LEGEND_PADDING;
+
+			this.context.textBaseline = 'top';
+			this.context.fillStyle = this.AXIS_LABEL_COLOR;
+			this.context.fillText( this.data.carrier[i].name, x, this.LEGEND_OFFSET );
+
+			x += literalLength[i] + this.LEGEND_MARGIN;
 		}
 		this.context.restore();
 	},
