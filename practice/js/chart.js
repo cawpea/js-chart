@@ -11,6 +11,8 @@ var CHART = {
 	TICK_MARGIN: 10,
 	TICK_LENGTH: 10,
 	DOTTED_LINE_PATTERN: [5, 5],
+	BAR_CREVICE_RATE: 0.05,
+	BAR_END_RATE: 0.1,
 	init: function (data) {
 		this.data = data;
 		this.setParameters();
@@ -33,6 +35,7 @@ var CHART = {
 		this.setupCommonParameters();
 		this.setVerticalAxisInfo();
 		this.drawAxis();
+		this.drawBars();
 	},
 	setupCommonParameters: function () {
 		this.context.clearRect( 0, 0, this.width, this.height );
@@ -185,6 +188,44 @@ var CHART = {
 				}
 			}
 		}
+	},
+	drawBars: function () {
+		this.context.save();
+
+		//キャリアの数
+		var barCount = this.data.carrier.length;
+		/*
+		各棒の幅
+		var eachBarWidth = 100 * ( 1 - 0.1 * 2 - 0.05 * (3 - 1) ) / 3;
+		var eachBarWidth = 100 * ( 1 - 0.2 - 0.1 ) / 3;
+		var eachBarWidth = 100 * 0.7 / 3;
+		var eachBarWidth = 23.333;
+		*/
+		var eachBarWidth = this.tickSpaceX * ( 1 - this.BAR_END_RATE * 2 - this.BAR_CREVICE_RATE * (barCount - 1) ) / barCount;
+		//y軸の高さ
+		var axisYHeight = this.height - this.PADDING.TOP - this.PADDING.BOTTOM - this.TICK_MARGIN;
+
+		//年ごとにループでデータを取り出す
+		for( var i = 0,length = this.data.subscribership.length; i < length; i++ ) {
+			// 各キャリアの純契約増数のデータ（配列）
+			var counts = this.data.subscribership[i].count;
+			//各年の表示領域の左端のX座標
+			var baseX = this.PADDING.LEFT + this.tickSpaceX * (i + this.BAR_END_RATE);
+
+			//キャリアごとにループでデータを取り出す
+			for( var j = 0, lengthj = counts.length; j < lengthj; j++ ) {
+				var color = this.data.carrier[j].color,
+					x = baseX + ( eachBarWidth + this.tickSpaceX * this.BAR_CREVICE_RATE ) * j,
+					height = axisYHeight * counts[j] / this.maxY;
+
+					this.context.fillStyle = color;
+					this.context.fillRect(
+						x,
+						this.PADDING.TOP + this.TICK_MARGIN + axisYHeight - height,
+						eachBarWidth, height, eachBarWidth );
+			}
+		}
+		this.context.restore();
 	},
 	formatNumber: function ( data ) {
 		data = String( data ).split('');
