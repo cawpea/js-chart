@@ -17,6 +17,8 @@ var CHART = {
 	LEGEND_OFFSET: 10,
 	LEGEND_PADDING: 10,
 	LEGEND_MARGIN: 10,
+	ANIMATION_COUNT: 30,
+
 	init: function (data) {
 		this.data = data;
 		this.setParameters();
@@ -65,7 +67,7 @@ var CHART = {
 		this.setVerticalAxisInfo();
 		this.drawAxis();
 		this.drawLegend();
-		this.drawBars();
+		this.startToDrawBars( this.ANIMATION_COUNT );
 	},
 	setupCommonParameters: function () {
 		this.context.clearRect( 0, 0, this.width, this.height );
@@ -219,21 +221,20 @@ var CHART = {
 			}
 		}
 	},
-	drawBars: function () {
-		this.context.save();
-
-		//キャリアの数
+	startToDrawBars: function ( toAnimate ) {
 		var barCount = this.data.carrier.length;
-		/*
-		各棒の幅
-		var eachBarWidth = 100 * ( 1 - 0.1 * 2 - 0.05 * (3 - 1) ) / 3;
-		var eachBarWidth = 100 * ( 1 - 0.2 - 0.1 ) / 3;
-		var eachBarWidth = 100 * 0.7 / 3;
-		var eachBarWidth = 23.333;
-		*/
-		var eachBarWidth = this.tickSpaceX * ( 1 - this.BAR_END_RATE * 2 - this.BAR_CREVICE_RATE * (barCount - 1) ) / barCount;
-		//y軸の高さ
-		var axisYHeight = this.height - this.PADDING.TOP - this.PADDING.BOTTOM - this.TICK_MARGIN;
+
+		this.eachBarWidth = this.tickSpaceX * ( 1 - this.BAR_END_RATE * 2 - this.BAR_CREVICE_RATE * (barCount - 1) ) / barCount;
+		this.axisYHeight = this.height - this.PADDING.TOP - this.PADDING.BOTTOM - this.TICK_MARGIN;
+
+		if( toAnimate ) {
+			this.timerlds.push( window.requestAnimationFrame( $.proxy( this.drawBars, this, this.ANIMATION_COUNT - 1 ) ) );
+		}else {
+			this.drawBars(0);
+		}
+	},
+	drawBars: function ( index ) {
+		this.context.save();
 
 		//年ごとにループでデータを取り出す
 		for( var i = 0,length = this.data.subscribership.length; i < length; i++ ) {
@@ -245,15 +246,18 @@ var CHART = {
 			//キャリアごとにループでデータを取り出す
 			for( var j = 0, lengthj = counts.length; j < lengthj; j++ ) {
 				var color = this.data.carrier[j].color,
-					x = baseX + ( eachBarWidth + this.tickSpaceX * this.BAR_CREVICE_RATE ) * j,
-					height = axisYHeight * counts[j] / this.maxY;
+					x = baseX + ( this.eachBarWidth + this.tickSpaceX * this.BAR_CREVICE_RATE ) * j,
+					height = this.axisYHeight * counts[j] / this.maxY * ( this.ANIMATION_COUNT - index ) / this.ANIMATION_COUNT;
 
 					this.context.fillStyle = color;
 					this.context.fillRect(
 						x,
-						this.PADDING.TOP + this.TICK_MARGIN + axisYHeight - height,
-						eachBarWidth, height, eachBarWidth );
+						this.PADDING.TOP + this.TICK_MARGIN + this.axisYHeight - height,
+						this.eachBarWidth, height, this.eachBarWidth );
 			}
+		}
+		if( index > 0 ) {
+			this.timerlds.push( window.requestAnimationFrame( $.proxy( this.drawBars, this, --index ) ) );
 		}
 		this.context.restore();
 	},
