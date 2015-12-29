@@ -23,7 +23,7 @@ var CHART = {
 		this.data = data;
 		this.setParameters();
 		this.bindEvent();
-		this.setupCanvas();
+		this.setupCanvas( this.ANIMATION_COUNT );
 	},
 	setParameters: function () {
 		this.$window = $(window);
@@ -60,14 +60,14 @@ var CHART = {
 			this.watchResize();
 			return;
 		}
-		this.setupCanvas();
+		this.setupCanvas( false );
 	},
-	setupCanvas: function () {
+	setupCanvas: function ( toAnimate ) {
 		this.setupCommonParameters();
 		this.setVerticalAxisInfo();
 		this.drawAxis();
 		this.drawLegend();
-		this.startToDrawBars( this.ANIMATION_COUNT );
+		this.startToDrawBars( toAnimate );
 	},
 	setupCommonParameters: function () {
 		this.context.clearRect( 0, 0, this.width, this.height );
