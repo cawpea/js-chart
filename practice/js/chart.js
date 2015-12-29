@@ -20,9 +20,11 @@ var CHART = {
 	init: function (data) {
 		this.data = data;
 		this.setParameters();
+		this.bindEvent();
 		this.setupCanvas();
 	},
 	setParameters: function () {
+		this.$window = $(window);
 		this.$container = $('#jsi-chart-container');
 		this.width = this.$container.width();
 		this.height = this.$container.height();
@@ -34,6 +36,29 @@ var CHART = {
 		});
 		this.$container.append(this.$canvas);
 		this.context = this.$canvas.get(0).getContext('2d');
+
+		this.timerlds = [];
+	},
+	bindEvent: function () {
+		this.$window.on( 'resize', $.proxy( this.watchResize, this ) );
+	},
+	watchResize: function () {
+		//リサイズ発生時に既にタイマーが設定されている場合は全て停止
+		while( this.timerlds.length > 0 ) {
+			window.cancelAnimationFrame( this.timerlds.pop() );
+		}
+		this.timerlds.push( window.requestAnimationFrame( $.proxy( this.redrawChart, this ) ) );
+	},
+	redrawChart: function () {
+		var width = this.$container.width();
+
+		//前回と幅が異なる場合はリサイズ中であると判定し、再度タイマーを設定
+		if( this.width !== width ) {
+			this.width = width;
+			this.watchResize();
+			return;
+		}
+		this.setupCanvas();
 	},
 	setupCanvas: function () {
 		this.setupCommonParameters();
