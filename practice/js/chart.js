@@ -23,7 +23,8 @@ var CHART = {
 		this.data = data;
 		this.setParameters();
 		this.bindEvent();
-		this.setupCanvas( this.ANIMATION_COUNT );
+		this.setupCanvas();
+		this.watchScroll();
 	},
 	setParameters: function () {
 		this.$window = $(window);
@@ -43,6 +44,7 @@ var CHART = {
 	},
 	bindEvent: function () {
 		this.$window.on( 'resize', $.proxy( this.watchResize, this ) );
+		this.$window.on( 'scroll', $.proxy( this.watchScroll, this ) );
 	},
 	watchResize: function () {
 		//リサイズ発生時に既にタイマーが設定されている場合は全て停止
@@ -50,6 +52,21 @@ var CHART = {
 			window.cancelAnimationFrame( this.timerlds.pop() );
 		}
 		this.timerlds.push( window.requestAnimationFrame( $.proxy( this.redrawChart, this ) ) );
+	},
+	//スクロールの位置を監視し、チャートが表示領域に入った時にアニメーションを開始
+	watchScroll: function () {
+		var containerTop = this.$container.offset().top,
+			containerBottom = containerTop + this.height,
+			windowTop = this.$window.scrollTop(),
+			windowBottom = windowTop + this.$window.height();
+
+		var isContainChartInWindow = containerTop >= windowTop && containerBottom <= windowBottom;
+		var isOverlapChartWithWindow = containerTop <= windowTop && containerBottom >= windowBottom;
+
+		if( isContainChartInWindow || isOverlapChartWithWindow ) {
+			this.$window.off('scroll', this.watchScroll);
+			this.startToDrawBars( true );
+		}
 	},
 	redrawChart: function () {
 		var width = this.$container.width();
@@ -67,7 +84,6 @@ var CHART = {
 		this.setVerticalAxisInfo();
 		this.drawAxis();
 		this.drawLegend();
-		this.startToDrawBars( toAnimate );
 	},
 	setupCommonParameters: function () {
 		this.context.clearRect( 0, 0, this.width, this.height );

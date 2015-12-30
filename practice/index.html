@@ -4,6 +4,27 @@
 	<meta charset="UTF-8">
 	<title>JS Chart</title>
 	<style>
+	html,body {
+		width: 100%;
+		height: 100%;
+	}
+	.toscroll-box {
+		width: 100%;
+		height: 100%;
+		position: relative;
+	}
+	.toscroll-box span {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		margin: auto;
+		width: 300px;
+		height: 50px;
+		line-height: 50px;
+		text-align: center;
+	}
 	#jsi-chart-container {
 		width: 100%;
 		min-width: 300px;
@@ -13,6 +34,9 @@
 	</style>
 </head>
 <body>
+	<div class="toscroll-box">
+		<span>下にスクロール</span>
+	</div>
 	<div id="jsi-chart-container"></div>
 	<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
 	<script src="/practice/json/bar_data.json"></script>
