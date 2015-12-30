@@ -41,10 +41,12 @@ var CHART = {
 		this.context = this.$canvas.get(0).getContext('2d');
 
 		this.timerlds = [];
+		this.legendAxis = [];
 	},
 	bindEvent: function () {
 		this.$window.on( 'resize', $.proxy( this.watchResize, this ) );
 		this.$window.on( 'scroll', $.proxy( this.watchScroll, this ) );
+		this.$canvas.on( 'click', $.proxy( this.selectCarrier, this ) );
 	},
 	watchResize: function () {
 		//リサイズ発生時に既にタイマーが設定されている場合は全て停止
@@ -68,7 +70,22 @@ var CHART = {
 			this.startToDrawBars( true );
 		}
 	},
-	redrawChart: function () {
+	selectCarrier: function ( event ) {
+		//クリックされた座標取得
+		var offset = this.$container.offset(),
+			x = event.clientX + this.$window.scrollLeft() - offset.left,
+			y = event.clientY + this.$window.scrollTop() - offset.top;
+
+		for( var i = 0, length = this.legendAxis.length; i < length; i++ ) {
+			var axis = this.legendAxis[i];
+
+			if( x >= axis.x1 && x <= axis.x2 && y >= axis.y1 && y <= axis.y2 ) {
+				this.data.carrier[i].disabled = !this.data.carrier[i].disabled;
+				this.redrawChart( true );
+			}
+		}
+	},
+	redrawChart: function ( toAnimate ) {
 		var width = this.$container.width();
 
 		//前回と幅が異なる場合はリサイズ中であると判定し、再度タイマーを設定
@@ -77,7 +94,8 @@ var CHART = {
 			this.watchResize();
 			return;
 		}
-		this.setupCanvas( false );
+		this.setupCanvas();
+		this.startToDrawBars( toAnimate );
 	},
 	setupCanvas: function ( toAnimate ) {
 		this.setupCommonParameters();
@@ -86,6 +104,11 @@ var CHART = {
 		this.drawLegend();
 	},
 	setupCommonParameters: function () {
+		this.width = this.$container.width();
+		this.height = this.$container.height();
+		this.$canvas.attr( {width: this.width, heigth: this.height} );
+		this.legendAxis.length = 0;
+
 		this.context.clearRect( 0, 0, this.width, this.height );
 
 		this.context.lineWidth = 1;
@@ -189,13 +212,19 @@ var CHART = {
 		this.context.restore();
 	},
 	setVerticalAxisInfo: function () {
+		var isFirst = true;
+
 		//最大値を取得
 		for ( var i = 0, lengthi = this.data.subscribership.length; i < lengthi; i++ ) {
 			var counts = this.data.subscribership[i].count;
 
 			for( var j = 0, lengthj = counts.length; j < lengthj; j++ ) {
-				if( i == 0 && j == 0 || this.maxY < counts[j] ) {
+				if( this.data.carrier[j].disabled ) {
+					continue;
+				}
+				if( isFirst || this.maxY < counts[j] ) {
 					this.maxY = counts[j];
+					isFirst = false;
 				}
 			}
 		}
@@ -261,6 +290,9 @@ var CHART = {
 
 			//キャリアごとにループでデータを取り出す
 			for( var j = 0, lengthj = counts.length; j < lengthj; j++ ) {
+				if( this.data.carrier[j].disabled ) {
+					continue;
+				}
 				var color = this.data.carrier[j].color,
 					x = baseX + ( this.eachBarWidth + this.tickSpaceX * this.BAR_CREVICE_RATE ) * j,
 					height = this.axisYHeight * counts[j] / this.maxY * ( this.ANIMATION_COUNT - index ) / this.ANIMATION_COUNT;
@@ -301,8 +333,12 @@ var CHART = {
 
 		//レジェンドを描画
 		for( var i = 0, count = this.data.carrier.length; i < count; i++ ) {
+			this.context.globalAlpha = this.data.carrier[i].disabled ? 0.5 : 1;
 			this.context.fillStyle = this.data.carrier[i].color;
 			this.context.fillRect( x, this.LEGEND_OFFSET, this.LEGEND_SIZE, this.LEGEND_SIZE );
+
+			//レジェンドのクリック判定用にレジェンドの位置情報を保持
+			var axis = { x1 : x, y1: this.LEGEND_OFFSET, y2: this.LEGEND_OFFSET + this.LEGEND_SIZE };
 
 			x += this.LEGEND_SIZE + this.LEGEND_PADDING;
 
@@ -310,7 +346,10 @@ var CHART = {
 			this.context.fillStyle = this.AXIS_LABEL_COLOR;
 			this.context.fillText( this.data.carrier[i].name, x, this.LEGEND_OFFSET );
 
-			x += literalLength[i] + this.LEGEND_MARGIN;
+			x += literalLength[i];
+			axis.x2 = x;
+			this.legendAxis.push( axis );
+			x += this.LEGEND_MARGIN;
 		}
 		this.context.restore();
 	},
