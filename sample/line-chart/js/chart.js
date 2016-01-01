@@ -17,26 +17,36 @@ var LINE_CHART = {
 	init: function ( data ) {
 		this.data = data;
 		this.setParameters();
+		this.bindEvent();
 		this.setupCanvas();
 	},
 	setParameters: function () {
 		this.$window = $(window);
 		this.$container = $('#jsi-chart-container');
-		this.containerWidth = this.$container.width();
-		this.containerHeight = this.$container.height();
 
 		this.$canvas = $('<canvas/>');
+		this.$container.append( this.$canvas );
+		this.context = this.$canvas.get(0).getContext('2d');
+
+		this.timerlds = [];
+	},
+	bindEvent: function () {
+		this.$window.on('resize', $.proxy( this.watchResize, this ));
+	},
+	setupCanvas: function () {
+		this.setupCommonParameters();
+		this.setVerticalAxisInfo();
+		this.drawAxis();
+		this.drawChart();
+	},
+	setupCommonParameters: function () {
+		this.containerWidth = this.$container.width();
+		this.containerHeight = this.$container.height();
 		this.$canvas.attr({
 			width: this.containerWidth,
 			height: this.containerHeight
 		});
-		this.$container.append( this.$canvas );
-		this.context = this.$canvas.get(0).getContext('2d');
-	},
-	setupCanvas: function () {
-		this.setVerticalAxisInfo();
-		this.drawAxis();
-		this.drawChart();
+		this.context.clearRect( 0, 0, this.containerWidth, this.containerHeight );
 	},
 	setVerticalAxisInfo: function () {
 		this.maxY = undefined;
@@ -60,6 +70,23 @@ var LINE_CHART = {
 
 		this.ticksY = Math.ceil( this.maxY / base );
 		this.maxY = this.ticksY * base;
+	},
+	watchResize: function () {
+		if( this.timerlds.length > 0 ) {
+			window.cancelAnimationFrame( this.timerlds.pop() );
+		}
+		var timer = window.requestAnimationFrame( $.proxy( this.redrawChart, this ) );
+		this.timerlds.push( timer );
+	},
+	redrawChart: function () {
+		var width = this.$container.width();
+
+		if( this.containerWidth !== width ) {
+			this.containerWidth = width;
+			this.watchResize();
+			return;
+		}
+		this.setupCanvas();
 	},
 	drawAxis: function () {
 		this.drawAxisX();
