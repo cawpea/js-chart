@@ -240,6 +240,15 @@ var CHART = {
 		this.maxY = this.ticksY * base;
 	},
 	drawDottedLine: function ( x1, y1, x2, y2 ) {
+		/*
+		x1 = 0;
+		x2 = 100;
+		y1 = 0;
+		y2 = 100;
+		Math.sqrt( (100 - 0 の2乗) + (100 - 0 の2乗) )
+		Math.sqrt( 10000 + 10000 )
+		Math.sqrl( 20000 )
+		*/
 		var length = Math.sqrt( Math.pow( x2 - x1, 2 ) + Math.pow( y2 - y1, 2 )),
 			rateX = (x2 - x1) / length,
 			rateY = (y2 - y1) / length,
